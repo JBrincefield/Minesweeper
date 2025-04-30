@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Minesweeper.MainPage">
+    <VerticalStackLayout x:Name="MainMenu">
+        <Label Text="Minesweeper" FontSize="24" HorizontalOptions="Center" Margin="10"/>
+        <Button Text="Easy (9x9, 10 mines)" Clicked="OnEasyClicked"/>
+        <Button Text="Medium (16x16, 40 mines)" Clicked="OnMediumClicked"/>
+        <Button Text="Hard (30x16, 99 mines)" Clicked="OnHardClicked"/>
+    </VerticalStackLayout>
+</ContentPage>
