@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Controls;
+using Minesweeper.Strategies;
 using System;
 using System.Collections.Generic;
 

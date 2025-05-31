@@ -1,4 +1,4 @@
-﻿namespace Minesweeper
+﻿namespace Minesweeper.Strategies
 {
     public interface IMineGenerationStrategy
     {
