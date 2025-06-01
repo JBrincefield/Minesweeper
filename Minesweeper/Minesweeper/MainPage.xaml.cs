@@ -1,6 +1,7 @@
 ﻿using Microsoft.Maui.Controls;
 using Minesweeper.Observer;
 using Minesweeper.Strategies;
+using Minesweeper.Decorators;
 using System;
 using System.Collections.Generic;
 
@@ -137,15 +138,13 @@ namespace Minesweeper
                 }
                 else if (button.BackgroundColor == Colors.LightGray)
                 {
-                    button.BackgroundColor = Colors.DarkOrange;
-                    button.Text = "🚩";
+                    new FlagDecorator().Apply(button);
                     _mineCount--;
                     NotifyObservers();
                 }
                 else if (button.BackgroundColor == Colors.DarkOrange)
                 {
-                    button.BackgroundColor = Colors.LightBlue;
-                    button.Text = "?";
+                    new QuestionMarkDecorator().Apply(button);
                     _mineCount++;
                     NotifyObservers();
                 }
@@ -210,14 +209,13 @@ namespace Minesweeper
                 if (button.BackgroundColor == Colors.LightBlue)
                     button.Text = "";
 
-                button.BackgroundColor = Colors.DarkGray;
 
                 HashSet<(int, int)> surroundingCells = GetSurroundingCells(currentRow, currentCol);
                 int mineCount = GetMineCount(surroundingCells);
 
                 if (mineCount > 0)
                 {
-                    button.Text = mineCount.ToString();
+                    new RevealDecorator(mineCount > 0 ? mineCount.ToString() : "").Apply(button);
 
                 }
                 else
@@ -288,8 +286,7 @@ namespace Minesweeper
                         }
                         else
                         {
-                            button.BackgroundColor = Colors.Red;
-                            button.Text = "💣";
+                            new MineDecorator().Apply(button);
                         }
                     }
                 }
