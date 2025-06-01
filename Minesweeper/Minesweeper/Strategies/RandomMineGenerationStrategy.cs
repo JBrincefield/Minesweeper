@@ -1,8 +1,7 @@
-﻿using Minesweeper.Strategies;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Minesweeper {
+namespace Minesweeper.Strategies {
     public class RandomMineGenerationStrategy : IMineGenerationStrategy
     {
         public bool[,] GenerateMines(int rows, int cols, int mineCount, (int, int) safeCell)
