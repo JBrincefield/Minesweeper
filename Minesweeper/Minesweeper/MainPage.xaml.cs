@@ -1,4 +1,6 @@
 ﻿using Microsoft.Maui.Controls;
+using Minesweeper.Observer;
+using Minesweeper.Strategies;
 using System;
 using System.Collections.Generic;
 
@@ -6,12 +8,18 @@ namespace Minesweeper
 {
     public partial class MainPage : ContentPage
     {
+        private IMineGenerationStrategy _mineStrategy = new RandomMineGenerationStrategy();
+
+        private readonly List<IGameObserver> _observers = new();
+
+
         private Label _mineCountLabel;
         private Button[,] _buttons;
         private bool[,] _mines;
         private int _rows, _cols, _mineCount, _maxMines;
         private bool _minesGenerated = false;
         private bool _gameOver = false;
+        private bool _isWin = false;
 
 
         public MainPage()
@@ -29,6 +37,7 @@ namespace Minesweeper
             _mines = new bool[rows, cols];
             _minesGenerated = false;
             _gameOver = false;
+            _isWin = false;
 
             Grid gameBoard = new()
             {
@@ -84,6 +93,8 @@ namespace Minesweeper
                 HorizontalOptions = LayoutOptions.Center
             };
 
+            RegisterObserver(new MineCountObserver(_mineCountLabel));
+
             VerticalStackLayout gameLayout = new()
             {
                 Children = { backButton, _mineCountLabel, gameBoard }
@@ -129,12 +140,14 @@ namespace Minesweeper
                     button.BackgroundColor = Colors.DarkOrange;
                     button.Text = "🚩";
                     _mineCount--;
+                    NotifyObservers();
                 }
                 else if (button.BackgroundColor == Colors.DarkOrange)
                 {
                     button.BackgroundColor = Colors.LightBlue;
                     button.Text = "?";
                     _mineCount++;
+                    NotifyObservers();
                 }
                 else if (button.BackgroundColor == Colors.LightBlue)
                 {
@@ -142,7 +155,7 @@ namespace Minesweeper
                     button.Text = "";
                 }
 
-                _mineCountLabel.Text = $"Mines left: {_mineCount}";
+                NotifyObservers();
             }
         }
 
@@ -188,7 +201,7 @@ namespace Minesweeper
                     if (button.BackgroundColor == Colors.DarkOrange)
                         continue;
 
-                    await EndGame(false);
+                    await EndGame();
                     return;
                 }
 
@@ -216,6 +229,7 @@ namespace Minesweeper
                         if (neighbor.BackgroundColor == Colors.DarkOrange)
                         {
                             _mineCount++;
+                            NotifyObservers();
                             neighbor.Text = "";
                         }
 
@@ -247,14 +261,15 @@ namespace Minesweeper
 
             if (revealedCells == _buttons.Length - _maxMines)
             {
-                await EndGame(true);
+                _isWin = true;
+                await EndGame();
             }
         }
 
 
 
 
-        private async Task EndGame(bool isWin)
+        private async Task EndGame()
         {
             if (_gameOver) return;
             _gameOver = true;
@@ -280,10 +295,11 @@ namespace Minesweeper
                 }
             }
 
-            string title = isWin ? "🎉 YOU WIN!" : "💥 GAME OVER!";
-            string message = isWin ? "You cleared all safe spots!" : "You hit a mine!";
+            string title = _isWin ? "🎉 YOU WIN!" : "💥 GAME OVER!";
+            string message = _isWin ? "You cleared all safe spots!" : "You hit a mine!";
 
             await DisplayAlert(title, message, "OK");
+            NotifyObservers();
 
             ResetToMainMenu();
         }
@@ -305,23 +321,7 @@ namespace Minesweeper
 
         private void GenerateMines(int safeRow, int safeCol)
         {
-            Random random = new();
-            int minesPlaced = 0;
-
-            HashSet<(int, int)> excludedCells = GetSurroundingCells(safeRow, safeCol);
-            excludedCells.Add((safeRow, safeCol));
-
-            while (minesPlaced < _maxMines)
-            {
-                int row = random.Next(_rows);
-                int col = random.Next(_cols);
-
-                if (_mines[row, col] || excludedCells.Contains((row, col)))
-                    continue;
-
-                _mines[row, col] = true;
-                minesPlaced++;
-            }
+            _mines = _mineStrategy.GenerateMines(_rows, _cols, _maxMines, (safeRow, safeCol));
         }
 
         private HashSet<(int, int)> GetSurroundingCells(int row, int col)
@@ -361,5 +361,25 @@ namespace Minesweeper
         private void OnEasyClicked(object sender, EventArgs e) => StartGame(9, 9, 10);
         private void OnMediumClicked(object sender, EventArgs e) => StartGame(16, 16, 40);
         private void OnHardClicked(object sender, EventArgs e) => StartGame(30, 16, 99);
+
+        public void RegisterObserver(IGameObserver observer)
+        {
+            if (!_observers.Contains(observer))
+                _observers.Add(observer);
+        }
+
+        public void RemoveObserver(IGameObserver observer)
+        {
+            _observers.Remove(observer);
+        }
+
+        private void NotifyObservers()
+        {
+            var state = new GameState(_mineCount, _gameOver, _gameOver && _isWin);
+            foreach (var observer in _observers)
+            {
+                observer.OnGameStateChanged(state);
+            }
+        }
     }
 }
