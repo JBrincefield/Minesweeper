@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Controls;
+using Minesweeper.Strategies;
 using System;
 using System.Collections.Generic;
 
@@ -6,6 +7,8 @@ namespace Minesweeper
 {
     public partial class MainPage : ContentPage
     {
+        private IMineGenerationStrategy _mineStrategy = new RandomMineGenerationStrategy();
+
         private Label _mineCountLabel;
         private Button[,] _buttons;
         private bool[,] _mines;
@@ -305,23 +308,7 @@ namespace Minesweeper
 
         private void GenerateMines(int safeRow, int safeCol)
         {
-            Random random = new();
-            int minesPlaced = 0;
-
-            HashSet<(int, int)> excludedCells = GetSurroundingCells(safeRow, safeCol);
-            excludedCells.Add((safeRow, safeCol));
-
-            while (minesPlaced < _maxMines)
-            {
-                int row = random.Next(_rows);
-                int col = random.Next(_cols);
-
-                if (_mines[row, col] || excludedCells.Contains((row, col)))
-                    continue;
-
-                _mines[row, col] = true;
-                minesPlaced++;
-            }
+            _mines = _mineStrategy.GenerateMines(_rows, _cols, _maxMines, (safeRow, safeCol));
         }
 
         private HashSet<(int, int)> GetSurroundingCells(int row, int col)
